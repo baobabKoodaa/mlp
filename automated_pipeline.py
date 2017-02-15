@@ -1,5 +1,5 @@
 import numerapi
-import os
+import model
 import time
 
 napi = numerapi.NumerAPI()
@@ -20,7 +20,7 @@ while True:
         print('Error downloading! ', status)
         continue
     print('Download successful. Training model...')
-
+    model.train_model()
 
 
     prev_comp_id = curr_comp[0]
