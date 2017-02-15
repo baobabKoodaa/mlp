@@ -5,6 +5,7 @@ import zipfile
 from datetime import datetime, timedelta
 import numpy as np
 import os
+import ntpath
 
 class NumerAPI(object):
     def __init__(self):
@@ -108,8 +109,9 @@ class NumerAPI(object):
 
         headers = {'Authorization':'Bearer {0}'.format(accessToken)}
 
+        filename = ntpath.split(file_path)[1]
         r = requests.post(self._auth_url,
-                    data={'filename':file_path.split('/')[-1], 'mimetype': 'text/csv'},
+                    data={'filename':filename, 'mimetype': 'text/csv'},
                     headers=headers)
         if r.status_code!=200:
             return (None, None, None, r.status_code)
