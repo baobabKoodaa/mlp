@@ -138,7 +138,7 @@ class NumerAPI(object):
         if status_code!=200:
             return status_code
 
-        dataset_id, comp_id, status_code = self.get_current_competition()
+        status_code, dataset_id, comp_id = self.get_current_competition()
         if status_code!=200:
             return status_code
 

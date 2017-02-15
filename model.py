@@ -54,14 +54,14 @@ def write_predictions(alg, X_live, tourn):
     submission.to_csv(out_filename, columns=('\"t_id\"', '\"probability\"'), index=False,
                       quoting=csv.QUOTE_NONE)
     print('Done writing predictions to ', out_filename)
+    return out_filename
 
-def train_model():
+def process_data():
     train = pd.read_csv('dataset/numerai_training_data.csv')
     tourn = pd.read_csv('dataset/numerai_tournament_data.csv')
     feature_names = train.columns[0:50]
     raw_train_features = train[feature_names]
     raw_tourn_features = tourn[feature_names]
-    print(feature_names)
 
     # Normalize features. Must be done for tourn and train set at the same time.
     all_raw_features = raw_train_features.append(raw_tourn_features)
@@ -72,9 +72,10 @@ def train_model():
     print('Building model...')
     classifier_logistic_regression = LogisticRegression(max_iter=3000, tol=0.0000001, penalty='l1', C=0.03)
     classifier_logistic_regression.fit(raw_train_features, train['target'])
-    print(classifier_logistic_regression.coef_)
+    #print(classifier_logistic_regression.coef_)
     print(loss(classifier_logistic_regression, raw_train_features, train["target"], 10))
-    write_predictions(classifier_logistic_regression, raw_tourn_features, tourn)
+    filename = write_predictions(classifier_logistic_regression, raw_tourn_features, tourn)
+    return filename
 
-
-train_model()
+if __name__ == "__main__":
+    process_data()
