@@ -10,17 +10,22 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import LinearSVC
-from sklearn import cross_validation
+from sklearn import model_selection
 from sklearn.calibration import calibration_curve
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.metrics import log_loss
-from os import listdir
-from os.path import isfile, join
+import os
 from random import randint
 pd.options.display.max_columns = 100
 
+def make_dir_if_necessary(dataset_id):
+    dir_for_extra_features = os.path.join('generated_features', dataset_id)
+    if not os.path.exists(dir_for_extra_features):
+        os.makedirs(dir_for_extra_features)
+    return dir_for_extra_features
+
 def filename_available(name):
-    return not isfile(name)
+    return not os.path.isfile(name)
 
 def normalize(df):
     return (df - df.mean()) / (df.max() - df.min())
@@ -30,7 +35,7 @@ def loss(alg, features, targets, folds):
     predictions = alg.predict_proba(features)[:,1]
     train_logloss = log_loss(targets, predictions, normalize=True)
     # Cross validation logloss
-    scores = cross_validation.cross_val_score(alg, features, targets, cv=folds, scoring="log_loss")
+    scores = model_selection.cross_val_score(alg, features, targets, cv=folds, scoring="neg_log_loss")
     cv_logloss = np.abs(scores.mean())
     # Combine both into a DataFrame
     d = [{'Logloss': train_logloss}, {'Logloss': cv_logloss}]
@@ -48,7 +53,7 @@ def write_predictions(alg, X_live, tourn):
     out_filename = 'temp'
     for i in range(1, 1000000):
         out_filename = 'output_predictions' + str(i) + '.csv'
-        out_filename = join('predictions', out_filename)
+        out_filename = os.path.join('predictions', out_filename)
         if filename_available(out_filename):
             break
     submission.to_csv(out_filename, columns=('\"t_id\"', '\"probability\"'), index=False,
@@ -68,16 +73,16 @@ def tsne(all_raw_features, dir_for_extra_features):
     for i in range(1, 1000000):
         out_filename = 'tsne_out' + str(out_dims) + '_p' + str(perplexity) + '_run' + str(
             i) + '.csv'
-        out_filename = join(dir_for_extra_features, out_filename)
+        out_filename = os.path.join(dir_for_extra_features, out_filename)
         if filename_available(out_filename):
             break
     bao_bhtsne.process_results(res, out_filename)
 
 def collect_previously_extracted_features_from_files(dir):
     features = pd.DataFrame()
-    for f in listdir(dir): # for each file or folder inside
-        path = join(dir, f)
-        if isfile(path) & path.endswith(".csv"): # read .csv files only
+    for f in os.listdir(dir): # for each file or folder inside
+        path = os.path.join(dir, f)
+        if os.path.isfile(path) & path.endswith(".csv"): # read .csv files only
             next_batch = pd.read_csv(path, header=None)
 
             # rename columns
@@ -91,7 +96,7 @@ def collect_previously_extracted_features_from_files(dir):
     return normalize(features)
 
 def preprocess_data(train, tourn):
-    feature_names = train.columns[0:50]
+    feature_names = train.columns[0:train.columns.size-1] # exclude target from features
     raw_train_features = train[feature_names]
     raw_tourn_features = tourn[feature_names]
     all_raw_features = raw_train_features.append(raw_tourn_features)
@@ -99,6 +104,12 @@ def preprocess_data(train, tourn):
 
 def process_data(train, tourn, dir_for_extra_features):
     raw_train_features, raw_tourn_features, all_raw_features = preprocess_data(train, tourn)
+
+    # PCA
+    pca = sklearn.decomposition.PCA(n_components = 0.999, svd_solver='full')
+    pca.fit(all_raw_features)
+    all_raw_features = pd.DataFrame(pca.transform(all_raw_features))
+    print(all_raw_features)
 
     # Normalize features. Must be done for tourn and train set at the same time.
     norm_raw_features = normalize(all_raw_features)
@@ -120,5 +131,17 @@ def process_data(train, tourn, dir_for_extra_features):
     filename = write_predictions(classifier_logistic_regression, eng_tourn_features, tourn)
     return filename
 
+def get_latest_generated_features_dir():
+    b = 'generated_features'
+    all_subdirs = []
+    for d in os.listdir(b):
+        bd = os.path.join(b, d)
+        if os.path.isdir(bd): all_subdirs.append(bd)
+    return max(all_subdirs, key=os.path.getmtime)
+
 if __name__ == "__main__":
-    process_data()
+    dir_for_extra_features = get_latest_generated_features_dir()
+    print(dir_for_extra_features)
+    train = pd.read_csv('dataset/numerai_training_data.csv')
+    tourn = pd.read_csv('dataset/numerai_tournament_data.csv')
+    process_data(train, tourn, dir_for_extra_features)

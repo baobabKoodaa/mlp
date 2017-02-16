@@ -125,7 +125,7 @@ class NumerAPI(object):
         now = datetime.now()
         leaderboard, status_code = self.get_leaderboard()
         if status_code!=200:
-            return (status_code,)
+            return (status_code, None, None)
 
         for c in leaderboard:
             start_date = datetime.strptime(c['start_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
