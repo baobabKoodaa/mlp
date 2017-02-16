@@ -23,15 +23,16 @@ def run_tsne_indefinitely(train, tourn, all_raw_features, dir_for_extra_features
         predict(train, tourn, dir_for_extra_features)
 
 def spawn_tsne_processes(train, tourn, dir_for_extra_features):
-    raw_train_features, raw_tourn_features, all_raw_features = model.preprocess_data(train, tourn)
-    process_count = 6
+    train_features, tourn_features, all_features = model.preprocess_data(train, tourn)
+    process_count = 5
+    print('Running t-SNE indefinitely in', process_count, 'separate threads. Uploading predictions after every finish.')
     for i in range(0, process_count):
-        print('Running t-SNE indefinitely in a separate thread. Uploading predictions after every finish.')
-        thread = Thread(target=run_tsne_indefinitely, args=(train, tourn, all_raw_features, dir_for_extra_features))
+        thread = Thread(target=run_tsne_indefinitely, args=(train_features, tourn_features, all_features, dir_for_extra_features))
         thread.start()
 
 napi = numerapi.NumerAPI()
-prev_dataset_id = '58a4bb635b021b45045ba190'
+#prev_dataset_id = os.path.basename(os.path.normpath(model.get_latest_generated_features_dir()))
+prev_dataset_id = -1
 while True:
     status_code, dataset_id, comp_id = napi.get_current_competition()
     if status_code != 200:

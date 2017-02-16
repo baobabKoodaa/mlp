@@ -100,28 +100,27 @@ def preprocess_data(train, tourn):
     raw_train_features = train[feature_names]
     raw_tourn_features = tourn[feature_names]
     all_raw_features = raw_train_features.append(raw_tourn_features)
-    return raw_train_features, raw_tourn_features, all_raw_features
-
-def process_data(train, tourn, dir_for_extra_features):
-    raw_train_features, raw_tourn_features, all_raw_features = preprocess_data(train, tourn)
-
-    # PCA
     pca = sklearn.decomposition.PCA(n_components = 0.999, svd_solver='full')
     pca.fit(all_raw_features)
-    all_raw_features = pd.DataFrame(pca.transform(all_raw_features))
-    print(all_raw_features)
+    all_features = pd.DataFrame(pca.transform(all_raw_features))
+    train_features = pd.DataFrame(pca.transform(raw_train_features))
+    tourn_features = pd.DataFrame(pca.transform(raw_tourn_features))
+    return train_features, tourn_features, all_features
+
+def process_data(train, tourn, dir_for_extra_features):
+    train_features, tourn_features, all_features = preprocess_data(train, tourn)
 
     # Normalize features. Must be done for tourn and train set at the same time.
-    norm_raw_features = normalize(all_raw_features)
-    raw_train_features = norm_raw_features.iloc[:len(raw_train_features), :]
-    raw_tourn_features = norm_raw_features.iloc[len(raw_train_features):, :]
+    norm_raw_features = normalize(all_features)
+    train_features = norm_raw_features.iloc[:len(train_features), :]
+    tourn_features = norm_raw_features.iloc[len(train_features):, :]
 
     extra_features = collect_previously_extracted_features_from_files(dir_for_extra_features)
     print(extra_features.columns)
     train_tsne_features = extra_features[:len(train)]
     tourn_tsne_features = extra_features[len(train):].reset_index(drop=True)
-    eng_train_features = pd.concat([raw_train_features, train_tsne_features], axis=1)
-    eng_tourn_features = pd.concat([raw_tourn_features, tourn_tsne_features], axis=1)
+    eng_train_features = pd.concat([train_features, train_tsne_features], axis=1)
+    eng_tourn_features = pd.concat([tourn_features, tourn_tsne_features], axis=1)
 
     print('Building model...')
     classifier_logistic_regression = LogisticRegression(max_iter=3000, tol=0.0000001, penalty='l1', C=0.03)
