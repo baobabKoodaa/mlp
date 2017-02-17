@@ -44,6 +44,7 @@ def loss(alg, features, targets, folds):
 # TODO: Aja L1 feature selection, sit L2 jäljelle jääneille featureille !
 
 def write_predictions(alg, X_live, tourn):
+    print('Creating predictions...')
     predictions = alg.predict_proba(X_live)[:, 1]
     submission = pd.DataFrame({
         '\"t_id\"': tourn["t_id"],
@@ -67,7 +68,7 @@ def tsne(all_raw_features, dir_for_extra_features):
     perplexity = randint(5, 50)
     out_dims = randint(2, 3)
     # Run BH-TSNE
-    res = bao_bhtsne.run_bh_tsne(all_raw_features, verbose=True, randseed=seed, no_dims=out_dims, perplexity=perplexity, max_iter=2000)
+    res = bao_bhtsne.run_bh_tsne(all_raw_features, verbose=True, randseed=seed, no_dims=out_dims, perplexity=perplexity, max_iter=100)
     # Write output to next available filename, like "tsne_d3_p50_run4.csv"
     out_filename = 'temp'
     for i in range(1, 1000000):
@@ -114,32 +115,20 @@ def process_data(train, tourn, dir_for_extra_features):
     norm_raw_features = normalize(all_features)
     train_features = norm_raw_features.iloc[:len(train_features), :]
     tourn_features = norm_raw_features.iloc[len(train_features):, :]
-    print('Tourn features shape ', tourn_features.shape)
 
     extra_features = collect_previously_extracted_features_from_files(dir_for_extra_features)
     extra_train_features = extra_features[:len(train)]
     extra_tourn_features = extra_features[len(train):].reset_index(drop=True)
     tourn_features.reset_index(drop=True, inplace=True)
-    print('Extra tourn features shape ', extra_tourn_features.shape)
-    print('Tourn columns ', tourn_features.columns)
-    print('Extra tourn columns ', extra_tourn_features.columns)
-    print('*************************** TRAIN FEATURES ********************************')
-    print(train_features.head())
-    print('*************************** EXTRA TRAIN FEATURES ********************************')
-    print(extra_train_features.head())
-    print('*************************** TOURN FEATURES ********************************')
-    print(tourn_features.head())
-    print('*************************** EXTRA TOURN FEATURES ********************************')
-    print(extra_tourn_features.head())
     eng_train_features = pd.concat([train_features, extra_train_features], axis=1)
     eng_tourn_features = pd.concat([tourn_features, extra_tourn_features], axis=1)
-    print('Eng tourn features shape ', eng_tourn_features.shape)
 
-    print('Building model...')
+    print('Training model...')
     classifier_logistic_regression = LogisticRegression(max_iter=3000, tol=0.0000001, penalty='l1', C=0.03)
     classifier_logistic_regression.fit(eng_train_features, train['target'])
     #print(classifier_logistic_regression.coef_)
     print(loss(classifier_logistic_regression, eng_train_features, train["target"], 10))
+
     filename = write_predictions(classifier_logistic_regression, eng_tourn_features, tourn)
     return filename
 
@@ -153,6 +142,6 @@ def get_latest_generated_features_dir():
 
 if __name__ == "__main__":
     dir_for_extra_features = get_latest_generated_features_dir()
-    train = pd.read_csv('dataset/numerai_training_data.csv')
-    tourn = pd.read_csv('dataset/numerai_tournament_data.csv')
+    train = pd.read_csv('dataset/numerai_datasets/numerai_training_data.csv')
+    tourn = pd.read_csv('dataset/numerai_datasets/numerai_tournament_data.csv')
     process_data(train, tourn, dir_for_extra_features)

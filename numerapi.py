@@ -136,6 +136,7 @@ class NumerAPI(object):
 
 
     def upload_prediction(self, file_path):
+        print('Uploading predictions...')
         filename, signedRequest, headers, status_code = self.authorize(file_path)
         if status_code!=200:
             return status_code

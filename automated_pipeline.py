@@ -6,10 +6,8 @@ import numpy as np
 import pandas as pd
 from threading import Thread
 
-def predict(train, tourn, dir_for_extra_features):
-    print('Training model...')
-    predictions_filename = model.process_data(train, tourn, dir_for_extra_features)
-    print('Uploading predictions...')
+def predict(raw_csv_train, raw_csv_tourn, dir_for_extra_features):
+    predictions_filename = model.process_data(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
     status = napi.upload_prediction(predictions_filename)
     while status != 200:
         print('Error while uploading predictions. Status code ', status)
@@ -17,17 +15,17 @@ def predict(train, tourn, dir_for_extra_features):
         status = napi.upload_prediction(predictions_filename)
     print('Upload successful.')
 
-def run_tsne_indefinitely(train_features, tourn_features, all_features, dir_for_extra_features):
+def run_tsne_indefinitely(raw_csv_train, raw_csv_tourn, all_features, dir_for_extra_features):
     while True:
         model.tsne(all_features, dir_for_extra_features)
-        predict(train_features, tourn_features, dir_for_extra_features)
+        predict(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
 
-def spawn_tsne_processes(train, tourn, dir_for_extra_features):
-    train_features, tourn_features, all_features = model.preprocess_data(train, tourn)
+def spawn_tsne_processes(raw_csv_train, raw_csv_tourn, dir_for_extra_features):
+    train_features, tourn_features, all_features = model.preprocess_data(raw_csv_train, raw_csv_tourn)
     process_count = 5
     print('Running t-SNE indefinitely in', process_count, 'separate threads. Uploading predictions after every finish.')
     for i in range(0, process_count):
-        thread = Thread(target=run_tsne_indefinitely, args=(train_features, tourn_features, all_features, dir_for_extra_features))
+        thread = Thread(target=run_tsne_indefinitely, args=(raw_csv_train, raw_csv_tourn, all_features, dir_for_extra_features))
         thread.start()
 
 napi = numerapi.NumerAPI()
@@ -53,8 +51,8 @@ while True:
     prev_dataset_id = dataset_id
 
     dir_for_extra_features = model.make_dir_if_necessary(dataset_id)
-    train = pd.read_csv('dataset/numerai_training_data.csv')
-    tourn = pd.read_csv('dataset/numerai_tournament_data.csv')
-    predict(train, tourn, dir_for_extra_features)
-    spawn_tsne_processes(train, tourn, dir_for_extra_features)
+    raw_csv_train = pd.read_csv('dataset/numerai_datasets/numerai_training_data.csv')
+    raw_csv_tourn = pd.read_csv('dataset/numerai_datasets/numerai_tournament_data.csv')
+    predict(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
+    spawn_tsne_processes(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
     break
