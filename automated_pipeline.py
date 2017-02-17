@@ -8,12 +8,7 @@ from threading import Thread
 
 def predict(raw_csv_train, raw_csv_tourn, dir_for_extra_features):
     predictions_filename = model.process_data(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
-    status = napi.upload_prediction(predictions_filename)
-    while status != 200:
-        print('Error while uploading predictions. Status code ', status)
-        time.sleep(10)
-        status = napi.upload_prediction(predictions_filename)
-    print('Upload successful.')
+    napi.upload_prediction(predictions_filename)
 
 def run_tsne_indefinitely(raw_csv_train, raw_csv_tourn, all_features, dir_for_extra_features):
     while True:
@@ -33,10 +28,6 @@ napi = numerapi.NumerAPI()
 prev_dataset_id = -1
 while True:
     status_code, dataset_id, comp_id = napi.get_current_competition()
-    if status_code != 200:
-        print('Error retrieving current competition details, status code ', status_code)
-        time.sleep(10)
-        continue
     if dataset_id == prev_dataset_id:
         time.sleep(10)
         continue

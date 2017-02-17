@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import os
 import ntpath
+import time
 
 class NumerAPI(object):
     def __init__(self):
@@ -119,45 +120,48 @@ class NumerAPI(object):
         rj = r.json()
         return (rj['filename'], rj['signedRequest'], headers, r.status_code)
 
-
-
     def get_current_competition(self):
-        now = datetime.now()
-        leaderboard, status_code = self.get_leaderboard()
-        if status_code!=200:
-            return (status_code, None, None)
+        while True:
+            now = datetime.now()
+            leaderboard, status_code = self.get_leaderboard()
+            if status_code != 200:
+                print('Error retrieving current competition details, status code ', status_code)
+                time.sleep(10)
+                continue
 
-        for c in leaderboard:
-            start_date = datetime.strptime(c['start_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            end_date = datetime.strptime(c['end_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            if start_date < now < end_date:
-                return (status_code, c['dataset_id'], c['_id'])
+            for c in leaderboard:
+                start_date = datetime.strptime(c['start_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                end_date = datetime.strptime(c['end_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                if start_date < now < end_date:
+                    return (status_code, c['dataset_id'], c['_id'])
 
 
 
     def upload_prediction(self, file_path):
-        print('Uploading predictions...')
-        filename, signedRequest, headers, status_code = self.authorize(file_path)
-        if status_code!=200:
-            return status_code
+        while True:
+            print('Uploading predictions...')
+            filename, signedRequest, headers, status_code = self.authorize(file_path)
+            if status_code!=200:
+                print('Authorization error!', r.status_code)
+                return
 
-        status_code, dataset_id, comp_id = self.get_current_competition()
-        if status_code!=200:
-            return status_code
+            status_code, dataset_id, comp_id = self.get_current_competition()
+            with open(file_path, 'rb') as fp:
+                r = requests.Request('PUT', signedRequest, data=fp.read())
+                prepped = r.prepare()
+                s = requests.Session()
+                resp = s.send(prepped)
+                if resp.status_code!=200:
+                    return resp.status_code
 
-        with open(file_path, 'rb') as fp:
-            r = requests.Request('PUT', signedRequest, data=fp.read())
-            prepped = r.prepare()
-            s = requests.Session()
-            resp = s.send(prepped)
-            if resp.status_code!=200:
-                return resp.status_code
-
-        r = requests.post(self._submissions_url,
-                    data={'competition_id':comp_id, 'dataset_id':dataset_id, 'filename':filename},
-                    headers=headers)
-
-        return r.status_code
+            r = requests.post(self._submissions_url,
+                        data={'competition_id':comp_id, 'dataset_id':dataset_id, 'filename':filename},
+                        headers=headers)
+            if r.status_code == 200:
+                print('Upload successful.')
+                return
+            print('Error while uploading predictions. Status code ', r.status_code)
+            time.sleep(10)
 
 '''
 MIT License
