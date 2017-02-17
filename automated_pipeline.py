@@ -17,10 +17,10 @@ def predict(train, tourn, dir_for_extra_features):
         status = napi.upload_prediction(predictions_filename)
     print('Upload successful.')
 
-def run_tsne_indefinitely(train, tourn, all_raw_features, dir_for_extra_features):
+def run_tsne_indefinitely(train_features, tourn_features, all_features, dir_for_extra_features):
     while True:
-        model.tsne(all_raw_features, dir_for_extra_features)
-        predict(train, tourn, dir_for_extra_features)
+        model.tsne(all_features, dir_for_extra_features)
+        predict(train_features, tourn_features, dir_for_extra_features)
 
 def spawn_tsne_processes(train, tourn, dir_for_extra_features):
     train_features, tourn_features, all_features = model.preprocess_data(train, tourn)

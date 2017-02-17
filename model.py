@@ -114,13 +114,26 @@ def process_data(train, tourn, dir_for_extra_features):
     norm_raw_features = normalize(all_features)
     train_features = norm_raw_features.iloc[:len(train_features), :]
     tourn_features = norm_raw_features.iloc[len(train_features):, :]
+    print('Tourn features shape ', tourn_features.shape)
 
     extra_features = collect_previously_extracted_features_from_files(dir_for_extra_features)
-    print(extra_features.columns)
-    train_tsne_features = extra_features[:len(train)]
-    tourn_tsne_features = extra_features[len(train):].reset_index(drop=True)
-    eng_train_features = pd.concat([train_features, train_tsne_features], axis=1)
-    eng_tourn_features = pd.concat([tourn_features, tourn_tsne_features], axis=1)
+    extra_train_features = extra_features[:len(train)]
+    extra_tourn_features = extra_features[len(train):].reset_index(drop=True)
+    tourn_features.reset_index(drop=True, inplace=True)
+    print('Extra tourn features shape ', extra_tourn_features.shape)
+    print('Tourn columns ', tourn_features.columns)
+    print('Extra tourn columns ', extra_tourn_features.columns)
+    print('*************************** TRAIN FEATURES ********************************')
+    print(train_features.head())
+    print('*************************** EXTRA TRAIN FEATURES ********************************')
+    print(extra_train_features.head())
+    print('*************************** TOURN FEATURES ********************************')
+    print(tourn_features.head())
+    print('*************************** EXTRA TOURN FEATURES ********************************')
+    print(extra_tourn_features.head())
+    eng_train_features = pd.concat([train_features, extra_train_features], axis=1)
+    eng_tourn_features = pd.concat([tourn_features, extra_tourn_features], axis=1)
+    print('Eng tourn features shape ', eng_tourn_features.shape)
 
     print('Building model...')
     classifier_logistic_regression = LogisticRegression(max_iter=3000, tol=0.0000001, penalty='l1', C=0.03)
@@ -140,7 +153,6 @@ def get_latest_generated_features_dir():
 
 if __name__ == "__main__":
     dir_for_extra_features = get_latest_generated_features_dir()
-    print(dir_for_extra_features)
     train = pd.read_csv('dataset/numerai_training_data.csv')
     tourn = pd.read_csv('dataset/numerai_tournament_data.csv')
     process_data(train, tourn, dir_for_extra_features)
