@@ -46,6 +46,10 @@ def loss(alg, features, targets, folds):
 def write_predictions(alg, X_live, tourn):
     print('Creating predictions...')
     predictions = alg.predict_proba(X_live)[:, 1]
+
+    # Reduce confidence
+    predictions = (predictions - 0.5) / 2.4 + 0.5
+
     submission = pd.DataFrame({
         '\"t_id\"': tourn["t_id"],
         '\"probability\"': predictions
@@ -68,7 +72,7 @@ def tsne(all_raw_features, dir_for_extra_features):
     perplexity = randint(5, 50)
     out_dims = randint(2, 3)
     # Run BH-TSNE
-    res = bao_bhtsne.run_bh_tsne(all_raw_features, verbose=True, randseed=seed, no_dims=out_dims, perplexity=perplexity, max_iter=100)
+    res = bao_bhtsne.run_bh_tsne(all_raw_features, verbose=True, randseed=seed, no_dims=out_dims, perplexity=perplexity, max_iter=2000)
     # Write output to next available filename, like "tsne_d3_p50_run4.csv"
     out_filename = 'temp'
     for i in range(1, 1000000):

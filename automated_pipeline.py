@@ -33,6 +33,7 @@ while True:
         continue
 
     print('New dataset is available! Downloading... ', dataset_id)
+    status=200
     status = napi.download_current_dataset(dest_path="dataset", unzip=True)
     if status != 200:
         print('Error downloading! ', status)

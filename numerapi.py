@@ -142,7 +142,7 @@ class NumerAPI(object):
             print('Uploading predictions...')
             filename, signedRequest, headers, status_code = self.authorize(file_path)
             if status_code!=200:
-                print('Authorization error!', r.status_code)
+                print('Authorization error!', status_code)
                 return
 
             status_code, dataset_id, comp_id = self.get_current_competition()
@@ -152,7 +152,8 @@ class NumerAPI(object):
                 s = requests.Session()
                 resp = s.send(prepped)
                 if resp.status_code!=200:
-                    return resp.status_code
+                    print('Error while uploading predictions. Status code ', r.status_code)
+                    return
 
             r = requests.post(self._submissions_url,
                         data={'competition_id':comp_id, 'dataset_id':dataset_id, 'filename':filename},
