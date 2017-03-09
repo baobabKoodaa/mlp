@@ -24,27 +24,35 @@ def spawn_tsne_processes(raw_csv_train, raw_csv_tourn, dir_for_extra_features):
         thread.start()
 
 napi = numerapi.NumerAPI()
-#prev_dataset_id = os.path.basename(os.path.normpath(model.get_latest_generated_features_dir()))
+prev_dataset_id = os.path.basename(os.path.normpath(model.get_latest_generated_features_dir()))
 prev_dataset_id = -1
 while True:
-    status_code, dataset_id, comp_id = napi.get_current_competition()
-    if dataset_id == prev_dataset_id:
-        time.sleep(10)
-        continue
+    try:
+        status_code, dataset_id, comp_id = napi.get_current_competition()
+        if status_code != 200:
+            print('Error (8)')
+            time.sleep(10)
+            continue
+        if dataset_id == prev_dataset_id:
+            time.sleep(10)
+            continue
 
-    print('New dataset is available! Downloading... ', dataset_id)
-    status=200
-    status = napi.download_current_dataset(dest_path="dataset", unzip=True)
-    if status != 200:
-        print('Error downloading! ', status)
-        time.sleep(10)
-        continue
-    print('Download successful.')
-    prev_dataset_id = dataset_id
+        print('New dataset is available! Downloading... ', dataset_id)
+        status = 200
+        status = napi.download_current_dataset(dest_path="dataset", unzip=True)
+        if status != 200:
+            print('Error downloading! ', status)
+            time.sleep(10)
+            continue
+        print('Download successful.')
+        prev_dataset_id = dataset_id
 
-    dir_for_extra_features = model.make_dir_if_necessary(dataset_id)
-    raw_csv_train = pd.read_csv('dataset/numerai_datasets/numerai_training_data.csv')
-    raw_csv_tourn = pd.read_csv('dataset/numerai_datasets/numerai_tournament_data.csv')
-    predict(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
-    spawn_tsne_processes(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
-    break
+        dir_for_extra_features = model.make_dir_if_necessary(dataset_id)
+        raw_csv_train = pd.read_csv('dataset/numerai_datasets/numerai_training_data.csv')
+        raw_csv_tourn = pd.read_csv('dataset/numerai_datasets/numerai_tournament_data.csv')
+        predict(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
+        spawn_tsne_processes(raw_csv_train, raw_csv_tourn, dir_for_extra_features)
+    except:
+        print('No internet?')
+        time.sleep(10)
+

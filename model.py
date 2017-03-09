@@ -48,7 +48,13 @@ def write_predictions(alg, X_live, tourn):
     predictions = alg.predict_proba(X_live)[:, 1]
 
     # Reduce confidence
-    predictions = (predictions - 0.5) / 2.4 + 0.5
+    #predictions = (predictions - 0.5) / 2.4 + 0.5
+
+    # for i in range(0, len(predictions)):
+    #     if predictions[i] > 0.5:
+    #         predictions[i] = 0.5
+    #     else:
+    #         predictions[i] -= 0.000001
 
     submission = pd.DataFrame({
         '\"t_id\"': tourn["t_id"],

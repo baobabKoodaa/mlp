@@ -152,7 +152,7 @@ class NumerAPI(object):
                 s = requests.Session()
                 resp = s.send(prepped)
                 if resp.status_code!=200:
-                    print('Error while uploading predictions. Status code ', r.status_code)
+                    print('Error (1) while uploading predictions. Status code ', resp.status_code)
                     return
 
             r = requests.post(self._submissions_url,
@@ -161,7 +161,7 @@ class NumerAPI(object):
             if r.status_code == 200:
                 print('Upload successful.')
                 return
-            print('Error while uploading predictions. Status code ', r.status_code)
+            print('Error (2) while uploading predictions. Status code ', r.status_code)
             time.sleep(10)
 
 '''

@@ -1,4 +1,5 @@
 Installation instructions:
+
 	1. Find a machine with at least 32GB of RAM.
 	2. Create a Numerai account on the Numerai webpage
 	3. Set environment variables "NUMERAI_EMAIL" and "NUMERAI_PASSWORD"
